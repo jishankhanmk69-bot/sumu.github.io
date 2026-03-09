@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dakhil Reality System - Pro Tracker</title>
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        background-color: #050508;
+        color: #e5e7eb;
+        font-family: 'Hind Siliguri', monospace, sans-serif;
+    }
+    .panel {
+        background: #0b1220;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Circular Progress Styles */
+    .stat-ring {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: conic-gradient(#3b82f6 0%, #1f2937 0%);
+        transition: background 0.5s ease-out;
+    }
+    .stat-ring::before {
+        content: "";
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background-color: #0b1220;
+        border-radius: 50%;
+    }
+    .stat-content {
+        position: relative;
+        z-index: 10;
+        text-align: center;
+    }
+
+    /* Overall Syllabus Circle */
+    .progress-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s ease;
+    }
+    .progress-inner {
+        width: 95px;
+        height: 95px;
+        background: #0b1220;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Expandable Lists */
+    .expandable-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-in-out, margin 0.3s ease;
+    }
+    .expandable-card.active .expandable-content {
+        max-height: 1500px;
+        margin-top: 12px;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #050508; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+    
+    .nav-btn {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        border: 1px solid #374151;
+    }
+    
+    .subject-input-wrapper {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 8px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    /* Boss Encounter Animation */
+    @keyframes shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(3px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(3px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
+    .boss-shake {
+        animation: shake 0.5s;
+        animation-iteration-count: infinite;
+    }
+</style>
+</head>
+
+<body class="p-4 max-w-lg mx-auto pb-20">
+
+<h1 class="text-2xl font-black text-center mb-6 text-blue-500 tracking-wider flex items-center justify-center gap-2" style="text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);">
+    <i data-lucide="crosshair"></i> DAKHIL SYSTEM 😎
+</h1>
+
+<!-- GLOBAL STATS -->
+<div class="grid grid-cols-5 gap-1 mb-4 text-center text-sm font-bold">
+    <div class="panel py-2 flex flex-col items-center justify-center">
+        <span class="text-gray-400 text-[9px]">LEVEL</span>
+        <span id="lvl" class="text-base text-blue-400">1</span>
+    </div>
+    <div class="panel py-2 flex flex-col items-center justify-center relative overflow-hidden">
+        <span class="text-gray-400 text-[9px]">HP</span>
+        <span id="hp" class="text-base text-red-500">100</span>
+    </div>
+    <div class="panel py-2 flex flex-col items-center justify-center">
+        <span class="text-gray-400 text-[9px]">XP</span>
+        <span id="xp" class="text-base text-yellow-400">0</span>
+    </div>
+    <div class="panel py-2 flex flex-col items-center justify-center">
+        <span class="text-gray-400 text-[9px]">POINTS</span>
+        <span id="pts" class="text-base text-purple-400">0</span>
+    </div>
+    <div class="panel py-2 flex flex-col items-center justify-center border border-orange-500 bg-orange-900 bg-opacity-20 shadow-[0_0_10px_rgba(249,115,22,0.2)]">
+        <span class="text-orange-400 text-[9px] font-black tracking-widest">STREAK</span>
+        <span id="streak" class="text-base text-orange-400 flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i> 0</span>
+    </div>
+</div>
+
+<!-- NAVIGATION BUTTONS -->
+<div class="flex overflow-x-auto gap-2 mb-6 pb-2" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch;">
+    <button class="nav-btn bg-gray-800 text-gray-300 hover:bg-gray-700" onclick="showTab('profile')" id="btn-profile">
+        <i data-lucide="user" class="w-4 h-4"></i> PROFILE
+    </button>
+    <button class="nav-btn bg-gray-800 text-gray-300 hover:bg-gray-700" onclick="showTab('system')" id="btn-system">
+        <i data-lucide="clipboard-edit" class="w-4 h-4"></i> SYSTEM
+    </button>
+    <button class="nav-btn bg-gray-800 text-gray-300 hover:bg-gray-700" onclick="showTab('tracker')" id="btn-tracker">
+        <i data-lucide="book-open" class="w-4 h-4"></i> TRACKER
+    </button>
+    <button class="nav-btn bg-gray-800 text-gray-300 hover:bg-gray-700" onclick="showTab('stats')" id="btn-stats">
+        <i data-lucide="pie-chart" class="w-4 h-4"></i> STATS 🥶
+    </button>
+    <button class="nav-btn bg-gray-800 text-gray-300 hover:bg-gray-700" onclick="showTab('shop')" id="btn-shop">
+        <i data-lucide="shopping-cart" class="w-4 h-4"></i> SHOP
+    </button>
+</div>
+
+<!-- ==================== PLAYER PROFILE ==================== -->
+<div id="view-profile" class="hidden">
+    <div class="panel p-5 mb-5 text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-400"></div>
+        <h2 class="text-2xl font-black text-white tracking-widest">SAYED AHMED MISBAH</h2>
+        <p id="player-title" class="text-cyan-400 text-sm font-bold uppercase mt-1 tracking-widest">Beginner</p>
+    </div>
+
+    <div class="panel p-4 mb-5">
+        <h3 class="text-gray-400 text-xs font-bold mb-4 tracking-widest flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4"></i> ATTRIBUTE MATRIX
+        </h3>
+        <div id="stats-container" class="space-y-3"></div>
+    </div>
+
+    <div class="panel p-4">
+        <h3 class="text-gray-400 text-xs font-bold mb-3 tracking-widest flex items-center gap-2">
+            <i data-lucide="backpack" class="w-4 h-4"></i> INVENTORY & GEAR
+        </h3>
+        <div id="inventory-container" class="flex flex-wrap gap-2 text-sm"></div>
+    </div>
+</div>
+
+<!-- ==================== SYSTEM (DAILY LOG) ==================== -->
+<div id="view-system" class="panel p-5 mb-6 hidden">
+    <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-green-400">
+        <i data-lucide="clipboard-edit"></i> DAILY QUEST LOG
+    </h2>
+
+    <div class="space-y-5">
+        <!-- Core Stats -->
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 mb-1">Screen Time (Hr) <span class="text-red-500 text-[10px]">*Danger >6</span></label>
+                <input id="screen" type="number" step="0.5" min="0" placeholder="e.g. 3" class="w-full p-2.5 rounded bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-red-500 transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 mb-1">Sleep (Hr)</label>
+                <input id="sleep" type="number" step="0.5" min="0" placeholder="e.g. 7" class="w-full p-2.5 rounded bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-green-500">
+            </div>
+        </div>
+
+        <!-- Subjects -->
+        <div>
+            <div class="flex justify-between items-end mb-2">
+                <label class="block text-sm font-bold text-blue-300 border-b border-blue-900 pb-1 w-full flex items-center gap-2">
+                    <i data-lucide="book-check" class="w-4 h-4"></i> Study Time by Subject (Hours)
+                </label>
+            </div>
+            <p class="text-[10px] text-gray-500 mb-3">Leave blank if not studied today.</p>
+            
+            <div id="subject-inputs" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+        
+        <button id="submit-btn" class="w-full py-3 mt-4 rounded-lg font-bold bg-green-900 hover:bg-green-800 border border-green-700 transition text-green-100 flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(74,222,128,0.2)]" onclick="submitDay()">
+            <i data-lucide="zap" class="w-5 h-5"></i> SUBMIT TODAY'S GRIND
+        </button>
+    </div>
+</div>
+
+<!-- ==================== STATS / HISTORY ==================== -->
+<div id="view-stats" class="hidden space-y-5">
+    
+    <div class="flex justify-center gap-6">
+        <div class="panel p-4 flex flex-col items-center flex-1">
+            <h3 class="text-[10px] font-bold text-gray-400 tracking-wider mb-2">LAST 7 DAYS</h3>
+            <div id="ring-weekly" class="stat-ring shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+                <div class="stat-content">
+                    <span id="stat-weekly-hr" class="text-xl font-black text-blue-400">0h</span>
+                    <span class="block text-[8px] text-gray-500">/ 40h Goal</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel p-4 flex flex-col items-center flex-1">
+            <h3 class="text-[10px] font-bold text-gray-400 tracking-wider mb-2">LAST 30 DAYS</h3>
+            <div id="ring-monthly" class="stat-ring shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+                <div class="stat-content">
+                    <span id="stat-monthly-hr" class="text-xl font-black text-purple-400">0h</span>
+                    <span class="block text-[8px] text-gray-500">/ 160h Goal</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel p-4">
+        <h3 class="text-xs font-bold text-cyan-400 mb-4 border-b border-cyan-900 pb-2 flex items-center gap-2">
+            <i data-lucide="bar-chart" class="w-4 h-4"></i> SUBJECT BREAKDOWN (7 DAYS)
+        </h3>
+        <div id="stat-subjects-container" class="space-y-3"></div>
+    </div>
+
+    <div class="panel p-4">
+        <h3 class="text-xs font-bold text-gray-300 mb-4 border-b border-gray-700 pb-2 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4"></i> TIMELINE (PAST 45 DAYS)
+        </h3>
+        <div id="history-timeline" class="space-y-2"></div>
+    </div>
+</div>
+
+<!-- ==================== SYLLABUS TRACKER ==================== -->
+<div id="view-tracker" class="mb-6 hidden">
+    <div class="panel p-5 mb-5 flex flex-col items-center relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 text-gray-800 opacity-50"><i data-lucide="target" class="w-40 h-40"></i></div>
+        <h3 class="font-bold text-gray-300 mb-2 tracking-wide text-sm z-10">OVERALL SYLLABUS PROGRESS</h3>
+        <div class="progress-circle bg-gray-800 z-10 shadow-[0_0_25px_rgba(74,222,128,0.1)]" id="overallCircle">
+            <div class="progress-inner">
+                <strong id="overallPercent" class="text-3xl font-black text-green-400">0%</strong>
+            </div>
+        </div>
+        <div class="flex justify-between w-full max-w-[200px] mt-4 text-center z-10">
+            <div><strong id="doneCount" class="text-lg text-white">0</strong><br><span class="text-[10px] text-gray-400 tracking-wider">COMPLETED</span></div>
+            <div><strong id="totalCount" class="text-lg text-white">0</strong><br><span class="text-[10px] text-gray-400 tracking-wider">TOTAL</span></div>
+        </div>
+    </div>
+    <div id="syllabus-container" class="space-y-3"></div>
+</div>
+
+<!-- ==================== SHOP SYSTEM ==================== -->
+<div id="view-shop" class="hidden">
+    <div class="panel p-5 mb-5 flex justify-between items-center bg-yellow-900 bg-opacity-20 border-yellow-700">
+        <div>
+            <h2 class="text-lg font-bold text-yellow-500 flex items-center gap-2">
+                <i data-lucide="store" class="w-5 h-5"></i> BLACK MARKET
+            </h2>
+            <p class="text-[10px] text-gray-400">Trade your XP for permanent power.</p>
+        </div>
+        <div class="text-right">
+            <span class="text-[10px] text-gray-400 block">AVAILABLE XP</span>
+            <strong id="shop-xp" class="text-xl text-yellow-400 font-black">0</strong>
+        </div>
+    </div>
+    <div id="shop-container" class="space-y-3"></div>
+</div>
+
+<!-- ==================== BOSS ENCOUNTER MODAL ==================== -->
+<div id="boss-modal" class="fixed inset-0 bg-red-950 bg-opacity-95 z-[100] hidden flex-col items-center justify-center p-6 text-center">
+    <i data-lucide="skull" class="w-32 h-32 text-red-500 mb-4 boss-shake"></i>
+    <h1 class="text-4xl font-black text-white tracking-widest mb-2 boss-shake" style="text-shadow: 0 0 20px red;">DOOM SCROLL DEMON</h1>
+    <p class="text-red-300 font-bold text-lg mb-6">You wasted > 6 hours on screen!</p>
+    <div class="bg-red-900 border-2 border-red-500 text-white font-black px-8 py-3 rounded-full animate-pulse text-xl">
+        - 30 HP DAMAGE!
+    </div>
+</div>
+
+<!-- Notification Toast -->
+<div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 border border-gray-600 text-white px-6 py-3 rounded-full shadow-[0_0_15px_rgba(0,0,0,0.8)] opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2 z-50 whitespace-nowrap">
+    <span id="toast-msg">Notification</span>
+</div>
+
+<script>
+// --- CORE CONFIGURATION & SUBJECTS ---
+const SUBJECTS_LIST = [
+    "ICT", "গণিত", "English ১ম", "ইংরেজি ২য়", 
+    "বাংলা ১ম", "বাংলা ২য়", "ইতিহাস", "আকায়েদ", 
+    "আরবী ১ম", "আরবী ২য়", "কোরআন", "হাদিস"
+];
+const CHAPTERS_PER_SUBJECT = 20;
+
+const statConfig = {
+    intelligence: { name: "Intelligence", cost: 20, icon: "brain", color: "text-blue-400" },
+    focus: { name: "Focus", cost: 15, icon: "target", color: "text-purple-400" },
+    discipline: { name: "Discipline", cost: 25, icon: "shield", color: "text-green-400" },
+    memory: { name: "Memory", cost: 20, icon: "database", color: "text-pink-400" },
+    energy: { name: "Energy", cost: 15, icon: "zap", color: "text-yellow-400" }
+};
+
+const shopItems = [
+    { id: "bear_cloak", name: "Bear Skin Cloak", desc: "+5 Energy", cost: 200, buff: { energy: 5 }, icon: "shield" },
+    { id: "war_tusk", name: "War Tusk", desc: "+3 Discipline", cost: 300, buff: { discipline: 3 }, icon: "sword" },
+    { id: "shadow_ring", name: "Shadow Ring", desc: "+5 Focus", cost: 500, buff: { focus: 5 }, icon: "gem" },
+    { id: "billion_crown", name: "Billion Crown", desc: "+10 Intelligence", cost: 1000, buff: { intelligence: 10 }, icon: "crown" }
+];
+
+// --- STATE MANAGEMENT ---
+let state = {
+    level: 1, xp: 0, hp: 100, pts: 0,
+    streak: 0, // NEW STREAK TRACKER
+    lastSubmitDate: null,
+    history: [], 
+    syllabus: [],
+    profile: {
+        stats: { intelligence: 1, focus: 1, discipline: 1, memory: 1, energy: 1 },
+        inventory: []
+    }
+};
+
+const savedState = localStorage.getItem("dakhilSystemStateV4");
+if (savedState) {
+    state = JSON.parse(savedState);
+    if(state.streak === undefined) state.streak = 0;
+} else {
+    // Migration from V3
+    const oldState = localStorage.getItem("dakhilSystemStateV3");
+    if(oldState) {
+        let parsed = JSON.parse(oldState);
+        state = {...state, ...parsed};
+        if(state.streak === undefined) state.streak = 0;
+    } else {
+        state.syllabus = SUBJECTS_LIST.map(sub => ({
+            name: sub,
+            chapters: Array.from({length: CHAPTERS_PER_SUBJECT}, (_, j) => ({
+                name: `অধ্যায় ${j + 1}`, done: false
+            }))
+        }));
+    }
+}
+
+function saveState() {
+    localStorage.setItem("dakhilSystemStateV4", JSON.stringify(state));
+    updateStatsUI();
+}
+
+// --- UTILS ---
+function showToast(message, color = "white") {
+    const toast = document.getElementById("toast");
+    toast.innerHTML = `<span style="color:${color}; font-weight:bold;">${message}</span>`;
+    toast.classList.remove("opacity-0");
+    setTimeout(() => toast.classList.add("opacity-0"), 3000);
+}
+
+function triggerBossEvent() {
+    const bossModal = document.getElementById("boss-modal");
+    bossModal.classList.remove("hidden");
+    bossModal.classList.add("flex");
+    
+    // Auto hide after 3.5s
+    setTimeout(() => {
+        bossModal.classList.add("hidden");
+        bossModal.classList.remove("flex");
+    }, 3500);
+}
+
+// --- INITIAL RENDER ---
+function initSystemUI() {
+    const subContainer = document.getElementById("subject-inputs");
+    SUBJECTS_LIST.forEach(sub => {
+        subContainer.innerHTML += `
+            <div class="subject-input-wrapper hover:border-gray-600 transition">
+                <label class="text-[11px] text-gray-300 font-bold truncate">${sub}</label>
+                <input type="number" id="inp-${sub}" step="0.5" min="0" class="w-full bg-gray-800 text-white p-1.5 rounded text-sm border border-gray-700 focus:border-blue-500 focus:outline-none" placeholder="0">
+            </div>
+        `;
+    });
+}
+
+// --- CORE LOGIC ---
+function applyStats(xpGain, hpLoss) {
+    state.xp += xpGain;
+    state.hp -= hpLoss;
+    
+    let msg = [];
+    if(xpGain > 0) msg.push(`+${xpGain} XP`);
+    if(hpLoss > 0) msg.push(`-${hpLoss} HP`);
+    
+    // Only show default toast if there is no Boss event happening (handled in submitDay)
+    
+    if (state.hp <= 0) {
+        state.hp = 0;
+        setTimeout(() => showToast("CRITICAL WARNING: HP Depleted! Rest to recover.", "red"), 1000);
+    }
+
+    // Level Up
+    while (state.xp >= (state.level * 100)) {
+        state.xp -= (state.level * 100);
+        state.level++;
+        state.hp = 100;
+        state.pts += 3;
+        setTimeout(() => showToast(`🎉 LEVEL UP! Level ${state.level}! 😎`, "yellow"), 1500);
+    }
+    saveState();
+}
+
+function updateStatsUI() {
+    document.getElementById("lvl").innerText = state.level;
+    document.getElementById("hp").innerText = state.hp;
+    document.getElementById("xp").innerText = state.xp;
+    document.getElementById("pts").innerText = state.pts;
+    document.getElementById("streak").innerHTML = `<i data-lucide="flame" class="w-3 h-3 text-orange-400"></i> ${state.streak}`;
+
+    const hpEl = document.getElementById("hp");
+    hpEl.className = `text-base ${state.hp < 30 ? 'text-red-600 font-black animate-pulse' : 'text-red-500'}`;
+    
+    if(document.getElementById("shop-xp")) document.getElementById("shop-xp").innerText = state.xp;
+
+    let title = "Beginner";
+    if (state.level >= 5) title = "Novice";
+    if (state.level >= 10) title = "Adept";
+    if (state.level >= 20) title = "Scholar";
+    if (state.level >= 30) title = "Master";
+    if (state.level >= 50) title = "Legend 🥶";
+    document.getElementById("player-title").innerText = title;
+    
+    // Check if submitted today
+    const todayStr = new Date().toDateString();
+    const submitBtn = document.getElementById("submit-btn");
+    if(submitBtn) {
+        if(state.lastSubmitDate === todayStr) {
+            submitBtn.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5"></i> ALREADY SUBMITTED TODAY`;
+            submitBtn.className = "w-full py-3 mt-4 rounded-lg font-bold bg-gray-800 border border-gray-700 text-gray-500 flex justify-center items-center gap-2 cursor-not-allowed";
+        } else {
+            submitBtn.innerHTML = `<i data-lucide="zap" class="w-5 h-5"></i> SUBMIT TODAY'S GRIND`;
+            submitBtn.className = "w-full py-3 mt-4 rounded-lg font-bold bg-green-900 hover:bg-green-800 border border-green-700 transition text-green-100 flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(74,222,128,0.2)]";
+        }
+    }
+    lucide.createIcons();
+}
+
+// --- UI NAVIGATION ---
+function showTab(tabId) {
+    ['profile', 'system', 'tracker', 'stats', 'shop'].forEach(id => {
+        document.getElementById(`view-${id}`).classList.add('hidden');
+        const btn = document.getElementById(`btn-${id}`);
+        btn.classList.remove('bg-gray-700', 'text-white', 'border-gray-400');
+        btn.classList.add('bg-gray-800', 'text-gray-300', 'border-gray-700');
+    });
+    
+    document.getElementById(`view-${tabId}`).classList.remove('hidden');
+    const activeBtn = document.getElementById(`btn-${tabId}`);
+    activeBtn.classList.remove('bg-gray-800', 'text-gray-300', 'border-gray-700');
+    activeBtn.classList.add('bg-gray-700', 'text-white', 'border-gray-400');
+
+    if(tabId === 'tracker') renderTracker();
+    if(tabId === 'profile') renderProfile();
+    if(tabId === 'shop') renderShop();
+    if(tabId === 'stats') renderStats();
+}
+
+// --- SYSTEM (DAILY LOG) ---
+function submitDay() {
+    const todayStr = new Date().toDateString();
+    const todayDate = new Date(todayStr);
+
+    if(state.lastSubmitDate === todayStr){
+        showToast("Already submitted today. Come back tomorrow! 🥶", "#fbbf24");
+        return;
+    }
+
+    // --- STREAK CHECK LOGIC ---
+    let streakBroken = false;
+    if (state.lastSubmitDate) {
+        const lastDate = new Date(state.lastSubmitDate);
+        const diffTime = Math.abs(todayDate - lastDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        if (diffDays === 1) {
+            state.streak += 1;
+        } else {
+            if(state.streak > 1) streakBroken = true;
+            state.streak = 1; // Reset to 1 (since today is a new active day)
+        }
+    } else {
+        state.streak = 1; // First time ever
+    }
+
+    let screenVal = parseFloat(document.getElementById("screen").value) || 0;
+    let sleepVal = parseFloat(document.getElementById("sleep").value) || 0;
+
+    let subjectData = {};
+    let totalStudyVal = 0;
+    
+    SUBJECTS_LIST.forEach(sub => {
+        let val = parseFloat(document.getElementById(`inp-${sub}`).value) || 0;
+        if(val > 0) {
+            subjectData[sub] = val;
+            totalStudyVal += val;
+        }
+    });
+
+    if(totalStudyVal > 15) {
+        totalStudyVal = 15;
+        showToast("Capped at 15 hours human limit! 👽", "#fbbf24");
+    }
+
+    let dmg = 0, xp = 0;
+    let discBonus = (state.profile.stats.discipline - 1) * 2;
+    let energyBonus = (state.profile.stats.energy - 1) * 2;
+
+    // --- BOSS & SCREEN LOGIC ---
+    let bossEncounter = false;
+    if (screenVal > 6) {
+        bossEncounter = true;
+        dmg += 30; // Boss Flat Damage
+        // Apply normal penalty for rest of screen time above 3
+        dmg += Math.max(0, ((screenVal - 3) * 10) - discBonus);
+    } else if (screenVal > 3 && screenVal <= 6) {
+        dmg += Math.max(0, ((screenVal - 3) * 10) - discBonus);
+    } else {
+        xp += 15 + discBonus;
+    }
+
+    if (totalStudyVal >= 2) xp += (totalStudyVal * 12) + (state.profile.stats.focus * 2);
+    else dmg += 10;
+
+    if (sleepVal >= 6 && sleepVal <= 9) xp += 10;
+    else dmg += Math.max(0, 15 - energyBonus);
+
+    // --- STREAK BONUS LOGIC ---
+    let streakBonusMsg = "";
+    if (state.streak % 14 === 0 && state.streak > 0) {
+        state.profile.stats.focus += 1; 
+        state.profile.stats.discipline += 1;
+        xp += 30; // Also give the XP
+        streakBonusMsg = "🥶 14 DAY STREAK BUFF! +1 Focus & Discipline, +30 XP!"; 
+    } else if (state.streak % 7 === 0 && state.streak > 0) {
+        xp += 30;
+        streakBonusMsg = "🔥🔥 7 DAY STREAK! +30 XP Bonus!";
+    } else if (state.streak % 3 === 0 && state.streak > 0) {
+        xp += 10;
+        streakBonusMsg = "🔥 3 DAY STREAK! +10 XP Bonus!";
+    }
+
+    applyStats(Math.round(xp), Math.round(dmg));
+
+    // Save History Data
+    state.lastSubmitDate = todayStr;
+    state.history.push({
+        dateStr: todayStr,
+        timestamp: Date.now(),
+        displayDate: new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'short' }),
+        screen: screenVal,
+        sleep: sleepVal,
+        studyTotal: totalStudyVal,
+        subjects: subjectData
+    });
+
+    if(state.history.length > 45) state.history.shift();
+    
+    saveState(); // Will call updateStatsUI
+    
+    // Clear inputs
+    document.getElementById("screen").value = "";
+    document.getElementById("sleep").value = "";
+    SUBJECTS_LIST.forEach(sub => document.getElementById(`inp-${sub}`).value = "");
+    
+    // --- UI FEEDBACK EXECUTION ---
+    if(bossEncounter) {
+        triggerBossEvent();
+    } else if (streakBroken) {
+        showToast("Streak Broken! Back to Day 1. 🥺", "#f87171");
+    } else if (!streakBonusMsg) {
+        showToast(`Daily Grind Saved! +${Math.round(xp)} XP`, "#4ade80");
+    }
+
+    if(streakBonusMsg) {
+        // Delay toast if boss encounter is showing
+        setTimeout(() => showToast(streakBonusMsg, "#fbbf24"), bossEncounter ? 3800 : 500);
+    }
+}
+
+// --- STATS / HISTORY LOGIC ---
+function renderStats() {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    
+    let weekTotal = 0;
+    let monthTotal = 0;
+    let subjectStats7Days = {};
+    
+    SUBJECTS_LIST.forEach(s => subjectStats7Days[s] = 0);
+
+    state.history.forEach(entry => {
+        const diffDays = (now - entry.timestamp) / dayMs;
+        if(diffDays <= 30) monthTotal += entry.studyTotal;
+        if(diffDays <= 7) {
+            weekTotal += entry.studyTotal;
+            for(let sub in entry.subjects) {
+                if(subjectStats7Days[sub] !== undefined) subjectStats7Days[sub] += entry.subjects[sub];
+            }
+        }
+    });
+
+    const weekGoal = 40; 
+    const monthGoal = 160;
+    
+    let weekPrc = Math.min((weekTotal / weekGoal) * 100, 100);
+    let monthPrc = Math.min((monthTotal / monthGoal) * 100, 100);
+    
+    document.getElementById("stat-weekly-hr").innerText = weekTotal.toFixed(1) + "h";
+    document.getElementById("stat-monthly-hr").innerText = monthTotal.toFixed(1) + "h";
+    
+    document.getElementById("ring-weekly").style.background = `conic-gradient(#3b82f6 ${weekPrc}%, #1f2937 0%)`;
+    if(weekPrc >= 100) document.getElementById("ring-weekly").style.background = `conic-gradient(#4ade80 100%, #1f2937 0%)`;
+    
+    document.getElementById("ring-monthly").style.background = `conic-gradient(#a855f7 ${monthPrc}%, #1f2937 0%)`;
+    if(monthPrc >= 100) document.getElementById("ring-monthly").style.background = `conic-gradient(#4ade80 100%, #1f2937 0%)`;
+
+    const subContainer = document.getElementById("stat-subjects-container");
+    subContainer.innerHTML = "";
+    
+    let sortedSubjects = Object.entries(subjectStats7Days)
+        .filter(([_, time]) => time > 0)
+        .sort((a, b) => b[1] - a[1]);
+        
+    if(sortedSubjects.length === 0) {
+        subContainer.innerHTML = `<p class="text-xs text-gray-500 italic">No study data for the past 7 days.</p>`;
+    } else {
+        let maxSubTime = sortedSubjects[0][1];
+        sortedSubjects.forEach(([sub, time]) => {
+            let barWidth = Math.max((time / maxSubTime) * 100, 5);
+            subContainer.innerHTML += `
+                <div>
+                    <div class="flex justify-between text-[11px] mb-1">
+                        <span class="text-gray-300 font-bold">${sub}</span>
+                        <span class="text-cyan-400 font-mono">${time}h</span>
+                    </div>
+                    <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-cyan-500 h-full rounded-full shadow-[0_0_5px_#06b6d4]" style="width: ${barWidth}%"></div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    const timeline = document.getElementById("history-timeline");
+    timeline.innerHTML = "";
+    
+    if(state.history.length === 0) {
+        timeline.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-4">History is empty. Submit a day to see records.</p>`;
+    } else {
+        [...state.history].reverse().forEach((entry, idx) => {
+            let subDetailsHTML = "";
+            let hasSubjects = Object.keys(entry.subjects || {}).length > 0;
+            
+            if(hasSubjects) {
+                for(let sub in entry.subjects) {
+                    subDetailsHTML += `
+                        <div class="flex justify-between text-[11px] py-1 border-b border-gray-700 last:border-0">
+                            <span class="text-gray-400">${sub}</span>
+                            <span class="text-white font-mono">${entry.subjects[sub]}h</span>
+                        </div>
+                    `;
+                }
+            } else {
+                subDetailsHTML = `<p class="text-[11px] text-gray-500 italic">No subjects studied.</p>`;
+            }
+
+            timeline.innerHTML += `
+                <div class="expandable-card panel overflow-hidden border border-gray-800">
+                    <div class="p-3 cursor-pointer hover:bg-gray-800 flex justify-between items-center transition" onclick="this.parentElement.classList.toggle('active')">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-gray-900 px-2 py-1 rounded text-[10px] font-bold text-gray-400 w-12 text-center border border-gray-700">${entry.displayDate}</div>
+                            <span class="font-bold text-sm ${entry.studyTotal >= 5 ? 'text-green-400' : 'text-yellow-500'}">${entry.studyTotal}h Studied</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500"></i>
+                    </div>
+                    <div class="expandable-content bg-[#080d17] px-4 pb-3">
+                        <div class="grid grid-cols-2 gap-2 mb-3 mt-2 border-b border-gray-800 pb-3">
+                            <div class="text-[10px] text-gray-400"><i data-lucide="monitor" class="inline w-3 h-3 text-red-400"></i> Screen: <strong class="text-white">${entry.screen}h</strong></div>
+                            <div class="text-[10px] text-gray-400"><i data-lucide="moon" class="inline w-3 h-3 text-blue-400"></i> Sleep: <strong class="text-white">${entry.sleep}h</strong></div>
+                        </div>
+                        <div class="text-[10px] font-bold text-gray-500 mb-1">SUBJECTS BREAKDOWN</div>
+                        <div class="space-y-1 bg-gray-900 p-2 rounded border border-gray-800">
+                            ${subDetailsHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    lucide.createIcons();
+}
+
+// --- SYLLABUS TRACKER ---
+function renderTracker() {
+    const container = document.getElementById("syllabus-container");
+    container.innerHTML = "";
+    let totalDone = 0, totalChapters = 0;
+
+    state.syllabus.forEach((sub, sIndex) => {
+        let subDoneCount = sub.chapters.filter(c => c.done).length;
+        let subPercent = Math.round((subDoneCount / CHAPTERS_PER_SUBJECT) * 100);
+
+        totalDone += subDoneCount;
+        totalChapters += CHAPTERS_PER_SUBJECT;
+
+        let card = document.createElement("div");
+        card.className = "expandable-card panel p-4 cursor-pointer hover:border-gray-600 transition";
+        card.onclick = (e) => { if(e.target.type !== 'checkbox') card.classList.toggle("active"); };
+
+        let chaptersHTML = sub.chapters.map((c, cIndex) => `
+            <div class="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition ${c.done ? 'opacity-40' : ''}">
+                <input type="checkbox" class="w-4 h-4 accent-green-500 rounded border-gray-600 bg-gray-700" 
+                    ${c.done ? 'checked' : ''} onclick="toggleChapter(event, ${sIndex}, ${cIndex})">
+                <span class="${c.done ? 'line-through text-gray-500' : 'text-gray-300'} text-sm">${c.name}</span>
+            </div>
+        `).join("");
+
+        card.innerHTML = `
+            <div class="flex justify-between items-center mb-2">
+                <strong class="text-sm font-bold text-blue-200">${sub.name}</strong>
+                <span class="text-xs font-black ${subPercent === 100 ? 'text-green-400' : 'text-yellow-500'}">${subPercent}%</span>
+            </div>
+            <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-green-500 h-full transition-all duration-500 shadow-[0_0_5px_#4ade80]" style="width: ${subPercent}%"></div>
+            </div>
+            <div class="expandable-content flex flex-col gap-1">${chaptersHTML}</div>
+        `;
+        container.appendChild(card);
+    });
+
+    let overallPrcnt = Math.round((totalDone / totalChapters) * 100) || 0;
+    document.getElementById("overallPercent").innerText = overallPrcnt + "%";
+    document.getElementById("doneCount").innerText = totalDone;
+    document.getElementById("totalCount").innerText = totalChapters;
+    document.getElementById("overallCircle").style.background = `conic-gradient(#4ade80 ${overallPrcnt}%, #1f2937 0%)`;
+}
+
+function toggleChapter(event, sIndex, cIndex) {
+    event.stopPropagation();
+    const isDone = !state.syllabus[sIndex].chapters[cIndex].done;
+    state.syllabus[sIndex].chapters[cIndex].done = isDone;
+    
+    let xpBonus = isDone ? Math.floor((state.profile.stats.intelligence + state.profile.stats.memory) / 2) : 0;
+    
+    if (isDone) applyStats(5 + xpBonus, 0); 
+    else applyStats(-(5 + xpBonus), 0); 
+
+    saveState();
+    renderTracker();
+}
+
+// --- PROFILE & SHOP ---
+function renderProfile() {
+    const container = document.getElementById("stats-container");
+    container.innerHTML = "";
+    
+    for (const [key, config] of Object.entries(statConfig)) {
+        const val = state.profile.stats[key];
+        const cost = config.cost;
+        const canAfford = state.xp >= cost;
+        
+        container.innerHTML += `
+            <div class="flex items-center justify-between bg-gray-900 p-3 rounded-lg border border-gray-800 hover:border-gray-700 transition">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="${config.icon}" class="${config.color} w-5 h-5"></i>
+                    <div>
+                        <div class="text-sm font-bold text-gray-200 uppercase tracking-wide">${config.name}</div>
+                        <div class="text-xs text-gray-500 font-mono">Lvl ${val}</div>
+                    </div>
+                </div>
+                <button onclick="upgradeStat('${key}')" class="${canAfford ? 'bg-blue-900 hover:bg-blue-800 text-blue-200 shadow-[0_0_10px_rgba(30,58,138,0.5)]' : 'bg-gray-800 text-gray-600 cursor-not-allowed'} px-3 py-1.5 rounded text-xs font-bold border ${canAfford ? 'border-blue-700' : 'border-gray-700'} transition flex items-center gap-1">
+                    <i data-lucide="arrow-up" class="w-3 h-3"></i> ${cost} XP
+                </button>
+            </div>
+        `;
+    }
+
+    const invContainer = document.getElementById("inventory-container");
+    invContainer.innerHTML = "";
+    if(state.profile.inventory.length === 0) {
+        invContainer.innerHTML = `<span class="text-gray-600 italic text-xs">Inventory is empty. Loot the shop!</span>`;
+    } else {
+        state.profile.inventory.forEach(itemId => {
+            const item = shopItems.find(i => i.id === itemId);
+            if(item) {
+                invContainer.innerHTML += `
+                    <div class="flex items-center gap-2 bg-gray-900 border border-gray-700 px-3 py-2 rounded-lg text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.1)]">
+                        <i data-lucide="${item.icon}" class="w-4 h-4"></i> <span class="font-bold">${item.name}</span>
+                    </div>
+                `;
+            }
+        });
+    }
+    lucide.createIcons();
+}
+
+function upgradeStat(statKey) {
+    const cost = statConfig[statKey].cost;
+    if (state.xp >= cost) {
+        state.xp -= cost;
+        state.profile.stats[statKey]++;
+        saveState();
+        renderProfile();
+        showToast(`Upgraded ${statConfig[statKey].name}! 💪`, "#4ade80");
+    } else {
+        showToast("Not enough XP! Go study. 📖", "#f87171");
+    }
+}
+
+function renderShop() {
+    const container = document.getElementById("shop-container");
+    container.innerHTML = "";
+    document.getElementById("shop-xp").innerText = state.xp;
+
+    shopItems.forEach(item => {
+        const owned = state.profile.inventory.includes(item.id);
+        const canAfford = state.xp >= item.cost && !owned;
+        
+        container.innerHTML += `
+            <div class="panel p-4 border ${owned ? 'border-gray-700 opacity-50' : 'border-gray-600 hover:border-yellow-600 transition'}">
+                <div class="flex justify-between items-start">
+                    <div class="flex gap-3">
+                        <div class="bg-gray-800 p-2 rounded-lg h-min ${owned ? '' : 'shadow-[0_0_10px_rgba(234,179,8,0.2)]'}">
+                            <i data-lucide="${item.icon}" class="${owned ? 'text-gray-600' : 'text-yellow-400'} w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold ${owned ? 'text-gray-500' : 'text-white'}">${item.name}</h4>
+                            <p class="text-[11px] text-green-400 font-bold mb-1">${item.desc}</p>
+                            <span class="text-[10px] text-yellow-500 font-mono bg-yellow-900 bg-opacity-30 px-1.5 py-0.5 rounded">Cost: ${item.cost} XP</span>
+                        </div>
+                    </div>
+                    <button onclick="buyItem('${item.id}')" ${owned || !canAfford ? 'disabled' : ''} class="${owned ? 'bg-gray-800 text-gray-600' : canAfford ? 'bg-yellow-700 hover:bg-yellow-600 text-white shadow-[0_0_10px_rgba(202,138,4,0.4)]' : 'bg-gray-800 text-gray-500'} px-4 py-2 rounded-lg text-xs font-black transition">
+                        ${owned ? 'OWNED' : 'BUY'}
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    lucide.createIcons();
+}
+
+// --- INITIALIZATION ---
+initSystemUI();
+lucide.createIcons();
+updateStatsUI();
+showTab('profile');
+</script>
+
+</body>
+</html>
